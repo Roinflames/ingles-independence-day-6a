@@ -112,8 +112,51 @@
     font-weight: 700;
     flex-shrink: 0;
   }
-  .en { font-style: italic; color: var(--text); }
+  .en { font-style: italic; color: var(--text); margin: 0; }
   .es { color: var(--muted); font-size: 0.92rem; margin-top: 0.35rem; }
+  .en-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .listen-btn {
+    flex-shrink: 0;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    border: none;
+    background: #58cc02;
+    color: white;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 0 #4aa302;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  .listen-btn:hover { filter: brightness(1.05); }
+  .listen-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 0 0 #4aa302;
+  }
+  .listen-btn.playing {
+    animation: duo-pulse 0.6s ease-in-out infinite;
+  }
+  .listen-btn:disabled {
+    background: var(--muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  @keyframes duo-pulse {
+    0%, 100% { box-shadow: 0 3px 0 #4aa302; }
+    50% { box-shadow: 0 3px 0 #4aa302, 0 0 0 6px rgba(88,204,2,0.28); }
+  }
+  .audio-note {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+  }
   ul { padding-left: 1.25rem; margin: 0.5rem 0; }
   li { margin-bottom: 0.35rem; }
   .visual-tags {
@@ -187,13 +230,19 @@
 
   <section class="card">
     <h2><span class="qnum">1</span> When was it celebrated?</h2>
-    <p class="en">"Independence Day was celebrated on July 4th. The Continental Congress signed the Declaration of Independence in 1776, and Americans have celebrated this day every year since then."</p>
+    <div class="en-row">
+      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <p class="en">"Independence Day was celebrated on July 4th. The Continental Congress signed the Declaration of Independence in 1776, and Americans have celebrated this day every year since then."</p>
+    </div>
     <p class="es">Se celebró el 4 de julio. El Congreso Continental firmó la Declaración de Independencia en 1776, y desde entonces los estadounidenses celebran este día cada año.</p>
   </section>
 
   <section class="card">
     <h2><span class="qnum">2</span> How was it decorated?</h2>
-    <p class="en">"People decorated their houses and streets with red, white, and blue colors. They hung flags, banners, and streamers, and many towns organized firework shows at night."</p>
+    <div class="en-row">
+      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <p class="en">"People decorated their houses and streets with red, white, and blue colors. They hung flags, banners, and streamers, and many towns organized firework shows at night."</p>
+    </div>
     <p class="es">La gente decoró sus casas y calles con los colores rojo, blanco y azul. Colgaron banderas, pancartas y guirnaldas, y muchas ciudades organizaron shows de fuegos artificiales en la noche.</p>
     <div class="visual-tags">
       <span class="tag">🎆 Fuegos artificiales</span>
@@ -204,8 +253,12 @@
 
   <section class="card">
     <h2><span class="qnum">3</span> What was the food, dance and costume?</h2>
-    <p class="en">"Families ate hot dogs, hamburgers, and apple pie at barbecue parties. People wore red, white, and blue clothes, and many cities held parades with music and marching bands."</p>
+    <div class="en-row">
+      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <p class="en">"Families ate hot dogs, hamburgers, and apple pie at barbecue parties. People wore red, white, and blue clothes, and many cities held parades with music and marching bands."</p>
+    </div>
     <p class="es">Las familias comieron hot dogs, hamburguesas y pie de manzana en parrilladas. La gente vistió ropa roja, blanca y azul, y muchas ciudades hicieron desfiles con música y bandas.</p>
+    <p class="audio-note" id="audio-fallback-note" hidden>Tu navegador no soporta lectura en voz alta.</p>
     <div class="visual-tags">
       <span class="tag">🌭 Comida BBQ</span>
       <span class="tag">👕 Ropa patriótica</span>
@@ -256,5 +309,48 @@
   </footer>
 
 </div>
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.listen-btn');
+  var supported = 'speechSynthesis' in window;
+
+  if (!supported) {
+    buttons.forEach(function (btn) { btn.disabled = true; });
+    var note = document.getElementById('audio-fallback-note');
+    if (note) note.hidden = false;
+    return;
+  }
+
+  var englishVoice = null;
+  function pickVoice() {
+    var voices = window.speechSynthesis.getVoices();
+    englishVoice = voices.find(function (v) { return v.lang === 'en-US'; })
+      || voices.find(function (v) { return v.lang && v.lang.indexOf('en') === 0; })
+      || null;
+  }
+  pickVoice();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.nextElementSibling.textContent;
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-US';
+      utter.rate = 0.85;
+      if (englishVoice) utter.voice = englishVoice;
+
+      buttons.forEach(function (b) { b.classList.remove('playing'); });
+      btn.classList.add('playing');
+      utter.onend = function () { btn.classList.remove('playing'); };
+      utter.onerror = function () { btn.classList.remove('playing'); };
+
+      window.speechSynthesis.speak(utter);
+    });
+  });
+})();
+</script>
 </body>
 </html>
