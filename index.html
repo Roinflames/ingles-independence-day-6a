@@ -119,6 +119,11 @@
     align-items: center;
     gap: 0.75rem;
   }
+  .audio-controls {
+    display: flex;
+    flex-shrink: 0;
+    gap: 0.4rem;
+  }
   .listen-btn {
     flex-shrink: 0;
     width: 2.4rem;
@@ -148,9 +153,21 @@
     box-shadow: none;
     cursor: not-allowed;
   }
+  .listen-btn.slow-btn {
+    background: #1cb0f6;
+    box-shadow: 0 3px 0 #1899d6;
+    font-size: 1.15rem;
+  }
+  .listen-btn.slow-btn.playing {
+    animation: duo-pulse-blue 0.6s ease-in-out infinite;
+  }
   @keyframes duo-pulse {
     0%, 100% { box-shadow: 0 3px 0 #4aa302; }
     50% { box-shadow: 0 3px 0 #4aa302, 0 0 0 6px rgba(88,204,2,0.28); }
+  }
+  @keyframes duo-pulse-blue {
+    0%, 100% { box-shadow: 0 3px 0 #1899d6; }
+    50% { box-shadow: 0 3px 0 #1899d6, 0 0 0 6px rgba(28,176,246,0.28); }
   }
   .audio-note {
     font-size: 0.78rem;
@@ -231,7 +248,10 @@
   <section class="card">
     <h2><span class="qnum">1</span> When was it celebrated?</h2>
     <div class="en-row">
-      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <div class="audio-controls">
+        <button class="listen-btn" data-rate="1" aria-label="Listen at normal speed">🔊</button>
+        <button class="listen-btn slow-btn" data-rate="0.5" aria-label="Listen slowly">🐢</button>
+      </div>
       <p class="en">"Independence Day was celebrated on July 4th. The Continental Congress signed the Declaration of Independence in 1776, and Americans have celebrated this day every year since then."</p>
     </div>
     <p class="es">Se celebró el 4 de julio. El Congreso Continental firmó la Declaración de Independencia en 1776, y desde entonces los estadounidenses celebran este día cada año.</p>
@@ -240,7 +260,10 @@
   <section class="card">
     <h2><span class="qnum">2</span> How was it decorated?</h2>
     <div class="en-row">
-      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <div class="audio-controls">
+        <button class="listen-btn" data-rate="1" aria-label="Listen at normal speed">🔊</button>
+        <button class="listen-btn slow-btn" data-rate="0.5" aria-label="Listen slowly">🐢</button>
+      </div>
       <p class="en">"People decorated their houses and streets with red, white, and blue colors. They hung flags, banners, and streamers, and many towns organized firework shows at night."</p>
     </div>
     <p class="es">La gente decoró sus casas y calles con los colores rojo, blanco y azul. Colgaron banderas, pancartas y guirnaldas, y muchas ciudades organizaron shows de fuegos artificiales en la noche.</p>
@@ -254,7 +277,10 @@
   <section class="card">
     <h2><span class="qnum">3</span> What was the food, dance and costume?</h2>
     <div class="en-row">
-      <button class="listen-btn" aria-label="Listen">🔊</button>
+      <div class="audio-controls">
+        <button class="listen-btn" data-rate="1" aria-label="Listen at normal speed">🔊</button>
+        <button class="listen-btn slow-btn" data-rate="0.5" aria-label="Listen slowly">🐢</button>
+      </div>
       <p class="en">"Families ate hot dogs, hamburgers, and apple pie at barbecue parties. People wore red, white, and blue clothes, and many cities held parades with music and marching bands."</p>
     </div>
     <p class="es">Las familias comieron hot dogs, hamburguesas y pie de manzana en parrilladas. La gente vistió ropa roja, blanca y azul, y muchas ciudades hicieron desfiles con música y bandas.</p>
@@ -335,11 +361,12 @@
 
   buttons.forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var text = btn.nextElementSibling.textContent;
+      var text = btn.closest('.en-row').querySelector('.en').textContent;
+      var rate = parseFloat(btn.dataset.rate || '1');
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'en-US';
-      utter.rate = 0.85;
+      utter.rate = rate;
       if (englishVoice) utter.voice = englishVoice;
 
       buttons.forEach(function (b) { b.classList.remove('playing'); });
